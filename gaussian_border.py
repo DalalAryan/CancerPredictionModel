@@ -3,7 +3,8 @@
 import cv2
 import numpy as np
 import os
-from gaussian_filter import gaussian_filter  # Import your custom Gaussian filter
+from gaussian_filter import gaussian_filter  # Import custom Gaussian filter
+from hair_removal import remove_hair_from_image  # Import custom hair removal function
 
 # Input and output folders
 image_folder = "Gaussian_Images"
@@ -61,11 +62,18 @@ for filename in os.listdir(image_folder):
             output_path = os.path.join(output_folder, f"contoured_{filename}")
             cv2.imwrite(output_path, img_with_contours)
             print(f"Processed and saved: {output_path}")
+            min_area = 500  # Minimum area to filter out small contours
+            contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
         else:
             # --- Watershed fallback ---
             print(f"No contours found in {filename}, running watershed.")
 
+            #Apply hair removal to image pre watershed
+            img_no_hair = remove_hair_from_image(img)
+            gray = cv2.cvtColor(img_no_hair, cv2.COLOR_BGR2GRAY)
             # Threshold for sure background and sure foreground
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            enhanced = clahe.apply(gray)
             ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
             # Noise removal

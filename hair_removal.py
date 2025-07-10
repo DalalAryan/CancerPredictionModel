@@ -54,8 +54,19 @@ def apply_hair_removal(input_folder, output_folder):
             cv2.imwrite(output_path, dst)
             print(f"Processed and saved: {output_filename}")
 
+def remove_hair_from_image(img):
+    # No cropping unless needed
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 17))  # Larger kernel
+    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, kernel)
+    bhg = cv2.GaussianBlur(blackhat, (5, 5), 0)
+    # Try Otsu's thresholding for adaptive mask
+    _, mask = cv2.threshold(bhg, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    dst = cv2.inpaint(img, mask, 9, cv2.INPAINT_TELEA)  # Slightly larger radius
+    return dst
+
 # Define your input and output folders
-input_folder = "Processed_Images" # Assuming your initial images are here
+input_folder = "Gaussian_Images" # Assuming your initial images are here
 output_folder = "HairRemoval_Images"
 
 # Run the hair removal
